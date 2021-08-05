@@ -150,7 +150,7 @@ describe("Test my routes", () => {
             dbTest = JSON.stringify(dbTest, null, 4);
             fs.writeFileSync('./data/db.json', dbTest);
             for(let i = 1; i <= 2; i++){
-                let res = await request(app).post('/addToLine').send({id: i});
+                let res = await request(app).post('/addToLine').send({"id": i});
                 let position = i;
                 expect(res.body).toStrictEqual(position);
             }
@@ -166,7 +166,7 @@ describe("Test my routes", () => {
             expect(res.statusCode).toBe(400);
         })
 
-        it("Should return error not found", async () => {
+        it("Should return not found error", async () => {
             let db = fs.readFileSync('./data/db.json');
             db = JSON.parse(db);
             let dbTest = {
@@ -176,7 +176,7 @@ describe("Test my routes", () => {
             }
             dbTest = JSON.stringify(dbTest, null, 4);
             fs.writeFileSync('./data/db.json', dbTest);
-            let res = await request(app).post('/addToLine').send({id: 999});
+            let res = await request(app).post('/addToLine').send({"id": 999});
             expect(res.statusCode).toBe(404);
             db = JSON.stringify(db, null, 4);
             fs.writeFileSync('./data/db.json', db);
@@ -206,8 +206,77 @@ describe("Test my routes", () => {
             }
             dbTest = JSON.stringify(dbTest, null, 4);
             fs.writeFileSync('./data/db.json', dbTest);
-            let res = await request(app).post('/addToLine').send({id: 1});
+            let res = await request(app).post('/addToLine').send({"id": 1});
             expect(res.statusCode).toBe(409);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+    })
+
+    describe("post /findPosition", () => {
+        it("Should return the correct position", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    },
+                    {
+                        "id": 2,
+                        "name": "user2",
+                        "email": "user2@user.com",
+                        "gender": "masculino"
+                    }
+                ],
+                "queue": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    },
+                    {
+                        "id": 2,
+                        "name": "user2",
+                        "email": "user2@user.com",
+                        "gender": "masculino"
+                    }
+                ]
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            for(let i = 1; i <= 2; i++){
+                let res = await request(app).post('/findPosition').send({"email": `user${i}@user.com`});
+                expect(res.body).toBe(i);
+            }
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+        
+        it("Should return bad request", async () => {
+            let res = await request(app).post('/findPosition').send({});
+            expect(res.statusCode).toBe(400);
+            res = await request(app).post('/findPosition').send({"email": "incorrectemailformat"});
+            expect(res.statusCode).toBe(400);
+        })
+
+        it("Should return not found error", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [],
+                "queue": []
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/findPosition').send({"email": "inexistentEmail@mail.com"});
+            expect(res.statusCode).toBe(404);
             db = JSON.stringify(db, null, 4);
             fs.writeFileSync('./data/db.json', db);
         })
