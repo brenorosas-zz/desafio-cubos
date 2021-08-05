@@ -38,6 +38,95 @@ describe("Test my routes", () => {
             fs.writeFileSync('./data/db.json', db);
         })
     })
+
+    describe("post /createUser", () => {
+        it("Should create a user with the correct id", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [],
+                "queue": []
+            }
+            let users = [];
+            for(let i = 0; i < 2; i++){
+                users.push({
+                    name: `user${i}`,
+                    email: `user${i}@test.com`,
+                    gender: "masculino"
+                })
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/createUser').send(users[0]);
+            users[0].id = 1;
+            expect(res.body).toStrictEqual(users[0]);
+            res = await request(app).post('/createUser').send(users[1]);
+            users[1].id = 2;
+            expect(res.body).toStrictEqual(users[1]);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+
+        it("Should return bad request", async () => {
+            let user = {
+                "name": "user1",
+                "email": "user1",
+                "gender": "masculino"
+            }
+            let res = await request(app).post('/createUser').send(user);
+            expect(res.statusCode).toBe(400);
+            user = {
+                "n": "user",
+                "email": "user@user.com",
+                "gender": "masculino"
+            }
+            res = await request(app).post('/createUser').send(user);
+            expect(res.statusCode).toBe(400);
+            user = {
+                "name": "user",
+                "gender": "masculino"
+            }
+            res = await request(app).post('/createUser').send(user);
+            expect(res.statusCode).toBe(400);
+            user = {
+                "name": "user",
+                "email": "user@user.com"
+            }
+            res = await request(app).post('/createUser').send(user);
+            expect(res.statusCode).toBe(400);
+        })
+
+        it("Should return conflict error", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 2,
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "user",
+                        "email": "user@user.com",
+                        "gender": "masculino"
+                    }
+                ],
+                "queue": []
+            }
+            let user = {
+                "name": "testUser",
+                "email": "user@user.com",
+                "gender": "masculino"
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/createUser').send(user);
+            expect(res.statusCode).toBe(409);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+    })
+
+    
 })
 // test('teste do teste', async () => {
 //     expect(true).toBe(true);
