@@ -58,12 +58,11 @@ describe("Test my routes", () => {
             }
             dbTest = JSON.stringify(dbTest, null, 4);
             fs.writeFileSync('./data/db.json', dbTest);
-            let res = await request(app).post('/createUser').send(users[0]);
-            users[0].id = 1;
-            expect(res.body).toStrictEqual(users[0]);
-            res = await request(app).post('/createUser').send(users[1]);
-            users[1].id = 2;
-            expect(res.body).toStrictEqual(users[1]);
+            for(let i = 0; i < 2; i++){
+                let res = await request(app).post('/createUser').send(users[i]);
+                users[i].id = i + 1;
+                expect(res.body).toStrictEqual(users[i]);
+            }
             db = JSON.stringify(db, null, 4);
             fs.writeFileSync('./data/db.json', db);
         })
@@ -126,7 +125,93 @@ describe("Test my routes", () => {
         })
     })
 
-    
+    describe("post /addToLine", () => {
+        it("Should add to line and return the correct position", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 3,
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    },
+                    {
+                        "id": 2,
+                        "name": "user2",
+                        "email": "user2@user.com",
+                        "gender": "masculino"
+                    }
+                ],
+                "queue": []
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            for(let i = 1; i <= 2; i++){
+                let res = await request(app).post('/addToLine').send({id: i});
+                let position = i;
+                expect(res.body).toStrictEqual(position);
+            }
+            dbTest = fs.readFileSync('./data/db.json');
+            dbTest = JSON.parse(dbTest);
+            expect(dbTest.queue.length).toBe(2);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+
+        it("Should return bad request", async () => {
+            let res = await request(app).post('/addToLine').send({});
+            expect(res.statusCode).toBe(400);
+        })
+
+        it("Should return error not found", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [],
+                "queue": []
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/addToLine').send({id: 999});
+            expect(res.statusCode).toBe(404);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+
+        it("Should return conflict error", async () =>{
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    }
+                ],
+                "queue": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    }
+                ]
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/addToLine').send({id: 1});
+            expect(res.statusCode).toBe(409);
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+    })
 })
 // test('teste do teste', async () => {
 //     expect(true).toBe(true);
