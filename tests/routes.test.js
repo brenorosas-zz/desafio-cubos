@@ -281,6 +281,61 @@ describe("Test my routes", () => {
             fs.writeFileSync('./data/db.json', db);
         })
     })
+
+    describe("post /filterLine", () => {
+        it("Should do the correct filter of the line", async () => {
+            let db = fs.readFileSync('./data/db.json');
+            db = JSON.parse(db);
+            let dbTest = {
+                "nextId": 1,
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    },
+                    {
+                        "id": 2,
+                        "name": "user2",
+                        "email": "user2@user.com",
+                        "gender": "feminino"
+                    }
+                ],
+                "queue": [
+                    {
+                        "id": 1,
+                        "name": "user1",
+                        "email": "user1@user.com",
+                        "gender": "masculino"
+                    },
+                    {
+                        "id": 2,
+                        "name": "user2",
+                        "email": "user2@user.com",
+                        "gender": "feminino"
+                    }
+                ]
+            }
+            dbTest = JSON.stringify(dbTest, null, 4);
+            fs.writeFileSync('./data/db.json', dbTest);
+            let res = await request(app).post('/filterLine').send({"gender": "masculino"});
+            for(let i = 0; i < res.body.length; i++){
+                expect(res.body[i].gender).toStrictEqual("masculino");
+            }
+            res = await request(app).post('/filterLine').send({"gender": "feminino"});
+            for(let i = 0; i < res.body.length; i++){
+                expect(res.body[i].gender).toStrictEqual("feminino");
+            }
+            db = JSON.stringify(db, null, 4);
+            fs.writeFileSync('./data/db.json', db);
+        })
+
+        it("Should return bad request", async () => {
+            let res = await request(app).post('/filterLine').send({});
+            expect(res.statusCode).toBe(400);
+        })
+    })
 })
 // test('teste do teste', async () => {
 //     expect(true).toBe(true);
