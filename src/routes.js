@@ -63,7 +63,7 @@ routes.post('/addToLine', (req, res) => {
         let position = obj.queue.length;
         obj = JSON.stringify(obj, null, 4);
         fs.writeFileSync('./data/db.json', obj);
-        return res.json(position);
+        return res.json({"position": position});
     }
     catch{
         return res.status(500).end();

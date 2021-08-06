@@ -147,7 +147,7 @@ describe("Test my routes", () => {
             fs.writeFileSync('./data/db.json', dbTest);
             for(let i = 1; i <= amount; i++){
                 let res = await request(app).post('/addToLine').send({"id": i});;
-                expect(res.body).toStrictEqual(i);
+                expect(res.body).toStrictEqual({"position": i});
             }
             dbTest = fs.readFileSync('./data/db.json');
             dbTest = JSON.parse(dbTest);
