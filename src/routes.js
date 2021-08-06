@@ -81,7 +81,7 @@ routes.post('/findPosition', (req, res) => {
         let position = obj.queue.findIndex(user => user.email == email);
         if(position == -1)
             return res.status(404).end();
-        return res.json(position + 1);
+        return res.json({"position": position + 1});
     } catch {
         return res.status(500).end();
     }

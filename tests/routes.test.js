@@ -234,7 +234,7 @@ describe("Test my routes", () => {
             fs.writeFileSync('./data/db.json', dbTest);
             for(let i = 1; i <= amount; i++){
                 let res = await request(app).post('/findPosition').send({"email": `user${i}@mail.com`});;
-                expect(res.body).toBe(i);
+                expect(res.body).toStrictEqual({"position": i});
             }
             db = JSON.stringify(db, null, 4);
             fs.writeFileSync('./data/db.json', db);
