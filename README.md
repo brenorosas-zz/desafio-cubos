@@ -37,7 +37,7 @@ npm start
 
 ### Cadastrar Usuário
 
-**[POST]** http://localhost:3000/createUSer
+**[POST]** http://localhost:3000/createUser
 
 Para cadastrar um usuário, o corpo da requisição deve seguir o modelo do exemplo abaixo:
 
