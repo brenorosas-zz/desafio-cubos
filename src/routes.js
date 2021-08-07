@@ -4,9 +4,9 @@ const validators = require('./validators');
 const fs = require('fs');
 const funcionalities = require('./funcionalities.js')
 
-routes.get('/showLine', (req, res) => {
+routes.get('/showLine', async (req, res) => {
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         db.queue = db.queue.map((user, index) => {
             delete user.id;
             user.position = index + 1;
@@ -18,12 +18,12 @@ routes.get('/showLine', (req, res) => {
     }
 });
 
-routes.post('/createUser', (req, res) => {
+routes.post('/createUser', async (req, res) => {
     let validator = validators.createUserValidator.validate(req.body);
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         let newUser = funcionalities.newUser(req.body.name, req.body.email, req.body.gender);
         newUser = Object.assign({id: db.nextId}, newUser);
         let exist = db.users.some(user => user.email == newUser.email);
@@ -31,19 +31,19 @@ routes.post('/createUser', (req, res) => {
             return res.status(409).json({"error": "person is already registered"});
         db.nextId++;
         db.users.push(newUser);
-        funcionalities.writeData(db);
+        await funcionalities.writeData(db);
         return res.json(newUser);
     } catch {
         return res.status(500).end();
     }
 });
 
-routes.post('/addToLine', (req, res) => {
+routes.post('/addToLine', async (req, res) => {
     let validator = validators.addToLineValidator.validate(req.body);
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         let id = req.body.id;
         let index = db.users.findIndex(user => user.id == id);
         if(index == -1)
@@ -54,7 +54,7 @@ routes.post('/addToLine', (req, res) => {
         let user = db.users[index];
         db.queue.push(user);
         let position = db.queue.length;
-        funcionalities.writeData(db);
+        await funcionalities.writeData(db);
         return res.json({"position": position});
     }
     catch{
@@ -62,12 +62,12 @@ routes.post('/addToLine', (req, res) => {
     }
 });
 
-routes.post('/findPosition', (req, res) => {
+routes.post('/findPosition', async (req, res) => {
     let validator = validators.findPositionValidator.validate(req.body);
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         let email = req.body.email;
         let position = db.queue.findIndex(user => user.email == email);
         if(position == -1)
@@ -78,12 +78,12 @@ routes.post('/findPosition', (req, res) => {
     }
 });
 
-routes.post('/filterLine', (req, res) => {
+routes.post('/filterLine', async (req, res) => {
     let validator = validators.filterLineValidator.validate(req.body);
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         let gender = req.body.gender;
         db = db.queue.filter((user, index) => {
             user.position = index + 1;
@@ -96,13 +96,13 @@ routes.post('/filterLine', (req, res) => {
     }
 });
 
-routes.post('/popLine', (req, res) => {
+routes.post('/popLine', async (req, res) => {
     try{
-        let db = funcionalities.readData();
+        let db = await funcionalities.readData();
         if(db.queue.length == 0)
             return res.status(400).json({"error": "queue is empty"});
         let user = db.queue.shift();
-        funcionalities.writeData(db);
+        await funcionalities.writeData(db);
         return res.json(user);
     } catch {
         return res.status(500).end();
