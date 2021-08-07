@@ -1,23 +1,20 @@
 const request = require("supertest");
 const app = require("../src/server.js");
 const fs = require("fs");
-const funcionalities = require("../src/funcionalities.js");
+const dataHandler = require("../data/data_handler.js");
+const mock = require("./mocks.js");
 
 describe("Test my routes", () => {
   describe("get /showLine", () => {
     it("Should show everyone in the line", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 4,
         users: [],
         queue: [],
       };
       for (let i = 1; i < 4; i++) {
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@test.com`,
-          "masculino"
-        );
+        let user = mock.user(`user${i}`, `user${i}@test.com`, "masculino");
         user = Object.assign({ id: i }, user);
         dbTest.users.push(user);
         if (i % 2 == 1) dbTest.queue.push(user);
@@ -29,16 +26,16 @@ describe("Test my routes", () => {
         user.position = position++;
         return user;
       });
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       const res = await request(app).get("/showLine");
       expect(res.body).toStrictEqual(expected);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
   });
 
   describe("post /createUser", () => {
     it("Should create a user with the correct id", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 1,
         users: [],
@@ -46,20 +43,16 @@ describe("Test my routes", () => {
       };
       let users = [];
       for (let i = 0; i < 2; i++) {
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@test.com`,
-          "masculino"
-        );
+        let user = mock.user(`user${i}`, `user${i}@test.com`, "masculino");
         users.push(user);
       }
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       for (let i = 0; i < 2; i++) {
         let res = await request(app).post("/createUser").send(users[i]);
         users[i].id = i + 1;
         expect(res.body).toStrictEqual(users[i]);
       }
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return bad request", async () => {
@@ -92,7 +85,7 @@ describe("Test my routes", () => {
     });
 
     it("Should return conflict error", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 2,
         users: [
@@ -110,16 +103,16 @@ describe("Test my routes", () => {
         email: "user@user.com",
         gender: "masculino",
       };
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app).post("/createUser").send(user);
       expect(res.statusCode).toBe(409);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
   });
 
   describe("post /addToLine", () => {
     it("Should add to line and return the correct position", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let amount = 2;
       let dbTest = {
         nextId: amount + 1,
@@ -127,23 +120,18 @@ describe("Test my routes", () => {
         queue: [],
       };
       for (let i = 1; i <= amount; i++) {
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@test.com`,
-          "masculino"
-        );
+        let user = mock.user(`user${i}`, `user${i}@test.com`, "masculino");
         user = Object.assign({ id: i }, user);
         dbTest.users.push(user);
       }
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       for (let i = 1; i <= amount; i++) {
         let res = await request(app).post("/addToLine").send({ id: i });
         expect(res.body).toStrictEqual({ position: i });
       }
-      dbTest = fs.readFileSync("./data/db.json");
-      dbTest = JSON.parse(dbTest);
+      dbTest = await dataHandler.readData();
       expect(dbTest.queue.length).toBe(2);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return bad request", async () => {
@@ -152,37 +140,37 @@ describe("Test my routes", () => {
     });
 
     it("Should return not found error", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 1,
         users: [],
         queue: [],
       };
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app).post("/addToLine").send({ id: 999 });
       expect(res.statusCode).toBe(404);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return conflict error", async () => {
-      let db = await funcionalities.readData();
-      let user = funcionalities.newUser("user1", "user1@user.com", "masculino");
+      let db = await dataHandler.readData();
+      let user = mock.user("user1", "user1@user.com", "masculino");
       user = Object.assign({ id: 1 }, user);
       let dbTest = {
         nextId: 2,
         users: [user],
         queue: [user],
       };
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app).post("/addToLine").send({ id: 1 });
       expect(res.statusCode).toBe(409);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
   });
 
   describe("post /findPosition", () => {
     it("Should return the correct position", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let amount = 4;
       let dbTest = {
         nextId: amount + 1,
@@ -192,23 +180,19 @@ describe("Test my routes", () => {
       for (let i = 1; i <= amount; i++) {
         let gender = "masculino";
         if (i % 2 == 1) gender = "feminino";
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@mail.com`,
-          gender
-        );
+        let user = mock.user(`user${i}`, `user${i}@mail.com`, gender);
         user = Object.assign({ id: i }, user);
         dbTest.users.push(user);
         dbTest.queue.push(user);
       }
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       for (let i = 1; i <= amount; i++) {
         let res = await request(app)
           .post("/findPosition")
           .send({ email: `user${i}@mail.com` });
         expect(res.body).toStrictEqual({ position: i });
       }
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return bad request", async () => {
@@ -221,24 +205,24 @@ describe("Test my routes", () => {
     });
 
     it("Should return not found error", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 1,
         users: [],
         queue: [],
       };
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app)
         .post("/findPosition")
         .send({ email: "inexistentEmail@mail.com" });
       expect(res.statusCode).toBe(404);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
   });
 
   describe("post /filterLine", () => {
     it("Should do the correct filter of the line", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let amount = 4;
       let dbTest = {
         nextId: amount + 1,
@@ -248,16 +232,12 @@ describe("Test my routes", () => {
       for (let i = 1; i <= amount; i++) {
         let gender = "masculino";
         if (i % 2 == 1) gender = "feminino";
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@mail.com`,
-          gender
-        );
+        let user = mock.user(`user${i}`, `user${i}@mail.com`, gender);
         user = Object.assign({ id: i }, user);
         dbTest.users.push(user);
         dbTest.queue.push(user);
       }
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app)
         .post("/filterLine")
         .send({ gender: "masculino" });
@@ -268,7 +248,7 @@ describe("Test my routes", () => {
       res.body.forEach((user) => {
         expect(user.gender).toStrictEqual("feminino");
       });
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return bad request", async () => {
@@ -279,7 +259,7 @@ describe("Test my routes", () => {
 
   describe("post /popLine", () => {
     it("Should remove the first one from the queue correctly", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let amount = 4;
       let dbTest = {
         nextId: amount + 1,
@@ -289,35 +269,31 @@ describe("Test my routes", () => {
       for (let i = 1; i <= amount; i++) {
         let gender = "masculino";
         if (i % 2 == 1) gender = "feminino";
-        let user = funcionalities.newUser(
-          `user${i}`,
-          `user${i}@mail.com`,
-          gender
-        );
+        let user = mock.user(`user${i}`, `user${i}@mail.com`, gender);
         user = Object.assign({ id: i }, user);
         dbTest.users.push(user);
         dbTest.queue.push(user);
       }
       let queue = dbTest.queue;
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       for (let i = 0; i < amount; i++) {
         let res = await request(app).post("/popLine");
         expect(res.body).toStrictEqual(queue[i]);
       }
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
 
     it("Should return bad request", async () => {
-      let db = await funcionalities.readData();
+      let db = await dataHandler.readData();
       let dbTest = {
         nextId: 1,
         users: [],
         queue: [],
       };
-      await funcionalities.writeData(dbTest);
+      await dataHandler.writeData(dbTest);
       let res = await request(app).post("/popLine");
       expect(res.statusCode).toBe(400);
-      funcionalities.writeData(db);
+      dataHandler.writeData(db);
     });
   });
 });
