@@ -2,17 +2,17 @@ const express = require('express');
 const routes = express.Router();
 const validators = require('./validators');
 const fs = require('fs');
+const funcionalities = require('./funcionalities.js')
 
 routes.get('/showLine', (req, res) => {
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
-        obj.queue = obj.queue.map((user, index) => {
+        let db = funcionalities.readData();
+        db.queue = db.queue.map((user, index) => {
             delete user.id;
             user.position = index + 1;
             return user;
         });
-        return res.json(obj.queue);
+        return res.json(db.queue);
     } catch {
         return res.status(500).end();
     }
@@ -23,21 +23,15 @@ routes.post('/createUser', (req, res) => {
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
-        let newUser = {
-            id: obj.nextId,
-            name: req.body.name,
-            email: req.body.email,
-            gender: req.body.gender
-        }
-        let exist = obj.users.some(user => user.email == newUser.email);
+        let db = funcionalities.readData();
+        let newUser = funcionalities.newUser(req.body.name, req.body.email, req.body.gender);
+        newUser = Object.assign({id: db.nextId}, newUser);
+        let exist = db.users.some(user => user.email == newUser.email);
         if(exist)
             return res.status(409).json({"error": "person is already registered"});
-        obj.nextId++;
-        obj.users.push(newUser);
-        obj = JSON.stringify(obj, null, 4);
-        fs.writeFileSync('./data/db.json', obj);
+        db.nextId++;
+        db.users.push(newUser);
+        funcionalities.writeData(db);
         return res.json(newUser);
     } catch {
         return res.status(500).end();
@@ -49,20 +43,18 @@ routes.post('/addToLine', (req, res) => {
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
+        let db = funcionalities.readData();
         let id = req.body.id;
-        let index = obj.users.findIndex(user => user.id == id);
+        let index = db.users.findIndex(user => user.id == id);
         if(index == -1)
             return res.status(404).end();
-        let exist = obj.queue.some(user => user.id == id);
+        let exist = db.queue.some(user => user.id == id);
         if(exist)
             return res.status(409).json({"error": "person is already in line"});
-        let user = obj.users[index];
-        obj.queue.push(user);
-        let position = obj.queue.length;
-        obj = JSON.stringify(obj, null, 4);
-        fs.writeFileSync('./data/db.json', obj);
+        let user = db.users[index];
+        db.queue.push(user);
+        let position = db.queue.length;
+        funcionalities.writeData(db);
         return res.json({"position": position});
     }
     catch{
@@ -75,10 +67,9 @@ routes.post('/findPosition', (req, res) => {
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
+        let db = funcionalities.readData();
         let email = req.body.email;
-        let position = obj.queue.findIndex(user => user.email == email);
+        let position = db.queue.findIndex(user => user.email == email);
         if(position == -1)
             return res.status(404).end();
         return res.json({"position": position + 1});
@@ -92,15 +83,14 @@ routes.post('/filterLine', (req, res) => {
     if(validator.error)
         return res.status(400).json(validator.error.details);
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
+        let db = funcionalities.readData();
         let gender = req.body.gender;
-        obj = obj.queue.filter((user, index) => {
+        db = db.queue.filter((user, index) => {
             user.position = index + 1;
             delete user.id;
             return user.gender == gender;
         });
-        return res.json(obj);
+        return res.json(db);
     } catch {
         return res.status(500).end();
     }
@@ -108,13 +98,11 @@ routes.post('/filterLine', (req, res) => {
 
 routes.post('/popLine', (req, res) => {
     try{
-        let rawData = fs.readFileSync('./data/db.json');
-        let obj = JSON.parse(rawData);
-        if(obj.queue.length == 0)
+        let db = funcionalities.readData();
+        if(db.queue.length == 0)
             return res.status(400).json({"error": "queue is empty"});
-        let user = obj.queue.shift();
-        obj = JSON.stringify(obj, null, 4);
-        fs.writeFileSync('./data/db.json', obj);
+        let user = db.queue.shift();
+        funcionalities.writeData(db);
         return res.json(user);
     } catch {
         return res.status(500).end();
