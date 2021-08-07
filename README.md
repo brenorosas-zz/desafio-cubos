@@ -17,6 +17,7 @@ Para instalar as dependências basta executar o comando abaixo:
 ```
 npm install
 ```
+
 ## Executando os testes
 
 Para executar os testes basta utilizar o comando:
@@ -92,7 +93,7 @@ Para buscar um usuário na fila, o corpo da requisição deve contar o email do 
 
 ```
 {
-    "email": "user1@mail.com"   
+    "email": "user1@mail.com"
 }
 ```
 
